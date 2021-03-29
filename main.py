@@ -1,19 +1,20 @@
 import os
-import urllib.request
-from app import app
+import io
+import errno
 from flask import Flask, flash, request, redirect, render_template
 from werkzeug.utils import secure_filename
 
-ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
+from config import settings
+
 
 def allowed_file(filename):
-	return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+	return '.' in filename and filename.rsplit('.', 1)[1].lower() in settings.ALLOWED_EXTENSIONS
 
 def unzip(zip_file, extraction_path):
     """
     code to unzip files
     """
-    print "[INFO] Unzipping"
+    print("[INFO] Unzipping")
     try:
         files = []
         with zipfile.ZipFile(zip_file, "r") as z:
@@ -27,38 +28,40 @@ def unzip(zip_file, extraction_path):
                         os.makedirs(os.path.dirname(outfile))
                     except OSError as exc:  # Guard against race condition
                         if exc.errno != errno.EEXIST:
-                            print "\n[WARN] OS Error: Race Condition"
+                            print("\n[WARN] OS Error: Race Condition")
                 if not outfile.endswith("/"):
                     with io.open(outfile, mode='wb') as f:
                         f.write(dat.read())
                 dat.close()
         return files
     except Exception as e:
-        print "[ERROR] Unzipping Error" + str(e)
+        print("[ERROR] Unzipping Error") + str(e)
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 def upload_form():
-	return render_template('index.html')
+	return render_template('upload.html')
 
-@app.route('/', methods=['POST'])
+app = Flask(__name__)
+
+@app.route('/uploads', methods=['POST'])
 def upload_file():
 	if request.method == 'POST':
+		extraction_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "uploads")
         # check if the post request has the file part
 		if 'file' not in request.files:
 			flash('No file part')
-			return redirect(request.url)
-		file = request.files['file']
-		if file.filename == '':
+			return redirect("No file part")
+		file_uploaded = request.files['file']
+		if file_uploaded.filename == '':
 			flash('No file selected for uploading')
-			return redirect(request.url)
-		if file and allowed_file(file.filename):
-			filename = secure_filename(file.filename)
-			file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+			return redirect("No file selected for uploading")
+		if file and allowed_file(file_uploaded.filename):
+			filename = secure_filename(file_uploaded.filename)
+			write_to_file = os.path.join(extraction_path, filename)
+			file_uploaded.save(write_to_file)
+			unzip(write_to_file, extraction_path)
 			flash('File successfully uploaded')
-			return redirect('/')
-		else:
-			flash('Allowed file types are txt, pdf, png, jpg, jpeg, gif')
-			return redirect(request.url)
+			return "Successfully uploaded"
 
 if __name__ == "__main__":
     app.run()
