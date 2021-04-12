@@ -42,8 +42,6 @@ def unzip(zip_file, extraction_path):
 def upload_form():
 	return render_template('upload.html')
 
-app = Flask(__name__)
-
 @app.route('/uploads', methods=['POST'])
 def upload_file():
 	if request.method == 'POST':
