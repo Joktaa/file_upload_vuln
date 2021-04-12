@@ -46,7 +46,6 @@ def upload_form():
 def upload_file():
 	if request.method == 'POST':
 		extraction_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "uploads")
-        # check if the post request has the file part
 		if 'file' not in request.files:
 			flash('No file part')
 			return redirect("No file part")
