@@ -38,6 +38,18 @@ def unzip(zip_file, extraction_path):
     except Exception as e:
         print("[ERROR] Unzipping Error") + str(e)
 
+def html_escape(text):
+    html_escape_table = {
+        "&": "&amp;",
+        '"': "&quot;",
+        "'": "&apos;",
+        ">": "&gt;",
+        "<": "&lt;",
+    }
+    return "".join(html_escape_table.get(c, c) for c in text)
+
+app = Flask(__name__)
+
 @app.route('/', methods=['GET'])
 def upload_form():
 	return render_template('upload.html')
